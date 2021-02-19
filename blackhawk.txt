@@ -1,0 +1,501 @@
+1)a) LINEAR
+
+#include<stdio.h>
+#define LENGHT1 6 /*Lenght of i/p samples sequence*/
+#define LENGHT2 4 /*Lenght of impulse response Co-efficients */
+int x[2*LENGHT1-1]={1,2,3,4,5,6,0,0,0,0,0}; /*Input Signal Samples*/
+int h[2*LENGHT1-1]={1,2,3,4,0,0,0,0,0,0,0}; /*Impulse Response Coefficients*/
+int y[LENGHT1+LENGHT2-1];
+main()
+{
+int i=0,j;
+for(i=0;i<(LENGHT1+LENGHT2-1);i++)
+{
+y[i]=0;
+for(j=0;j<=i;j++)
+y[i]+=x[j]*h[i-j];
+}
+for(i=0;i<(LENGHT1+LENGHT2-1);i++)
+printf("%d\n",y[i]);}
+
+b) CIRCULAR
+
+
+#include<stdio.h>
+   int m,n,x[30],h[30],y[30],i,j,temp[30],k,x2[30],a[30];
+void main()
+{
+
+
+   printf("  enter the length of the first sequence\n");
+   scanf("%d",&m);
+   printf("  enter the length of the second sequence\n");
+   scanf("%d",&n);
+   printf("  enter the first sequence\n");
+   for(i=0;i<m;i++)
+   scanf("%d",&x[i]);
+   printf("  enter the second sequence\n");
+   for(j=0;j<n;j++)
+   scanf("%d",&h[j]);
+   if(m-n!=0)				/*Iflenght of both sequences are not equal*/
+   {
+	if(m>n)					/* Pad the smaller sequence with zero*/
+	{
+	for(i=n;i<m;i++)
+	h[i]=0;
+	n=m;
+	}
+	for(i=m;i<n;i++)
+	x[i]=0;
+	m=n;
+   }
+
+   y[0]=0;
+   a[0]=h[0];
+   for(j=1;j<n;j++)					/*folding h(n) to h(-n)*/
+   a[j]=h[n-j];
+   
+   /*Circular convolution*/
+  for(i=0;i<n;i++)
+   y[0]+=x[i]*a[i]; 
+  for(k=1;k<n;k++)
+  {
+   y[k]=0;
+   /*circular shift*/
+   for(j=1;j<n;j++)
+	x2[j]=a[j-1];
+
+   x2[0]=a[n-1];
+   for(i=0;i<n;i++)
+    {
+	a[i]=x2[i];
+	y[k]+=x[i]*x2[i];
+    }
+ }
+  /*displaying the result*/
+  printf("  the circular convolution is\n");
+  for(i=0;i<n;i++)
+  printf("%d \t",y[i]);
+
+  }
+
+
+
+2) DFT
+
+#include<stdio.h>
+#include<math.h>
+int N,k,n,i;
+float pi=3.1416,sumre=0, sumim=0,out_real[8]={0.0}, out_imag[8]={0.0};
+int x[32];
+void main(void)
+{
+printf(" enter the length of the sequence\n");
+scanf("%d",&N);
+printf(" enter the sequence\n");
+for(i=0;i<N;i++)
+scanf("%d",&x[i]);
+for(k=0;k<N;k++)
+{
+sumre=0;
+sumim=0;
+for(n=0;n<N;n++)
+{
+sumre=sumre+x[n]* cos(2*pi*k*n/N);
+sumim=sumim-x[n]* sin(2*pi*k*n/N);
+}
+out_real[k]=sumre;
+out_imag[k]=sumim;
+printf("X([%d])=\t%f\t+\t%fi\n",k,out_real[k],out_imag[k]);
+}
+}
+
+
+
+3) IMAGE PROCESSING 
+
+#include<stdio.h>
+#include<stdlib.h>
+#ifndef DCT_MAIN_H
+#define IMAGE_LEN 256
+#define IMAGE_SIZE (IMAGE_LEN*IMAGE_LEN)
+#define BLOCK_LEN 8
+#define BLOCK_SIZE (BLOCK_LEN*BLOCK_LEN)
+#endif
+#define IM_HEIGHT 256
+#define IM_WIDTH 256
+#define Pixels 225*225
+extern const unsigned char GRAY_BMP[];
+extern unsigned char LOGO[];
+extern const unsigned char gImage_wolf[];
+unsigned char finimg[65536];
+#pragma DATA_SECTION(images,".EXT_RAM");
+unsigned char images[3][IM_HEIGHT][IM_WIDTH];
+unsigned int i,temp;
+char smooth_mask[3][3] = {{1,2,1},{2,4,2},{1,2,1}};
+char sharp_mask[3][3]={{0,-1,0},{-1,5,-1},{0,-1,0}};
+int y,x;
+void smoothing_filter()
+{
+	for(y=0;y<IM_HEIGHT;y++)
+	IMG_conv_3x3_i8_c8s_cn((const unsigned char *restrict)&images[0][y][0],(unsigned char*restrict)&images[1][y][0], IM_WIDTH, (char *restrict)smooth_mask, 4);
+}
+void sharpening_filter()
+{
+	for(y=0;y<IM_HEIGHT;y++)
+	IMG_conv_3x3_i8_c8s_cn((const unsigned char *restrict)&images[0][y][0],(unsigned char*restrict)&images[1][y][0], IM_WIDTH, (char *restrict)sharp_mask, 0);
+}
+void threshold()
+{
+	IMG_thr_gt2max_8_cn(&images[0][0][0], &images[1][0][0], IM_WIDTH, IM_HEIGHT, 128);
+}
+void sobeledge()
+{
+	IMG_sobel_3x3_8_cn(&images[0][0][0], &images[1][0][0], IM_WIDTH, IM_HEIGHT);
+}
+void main()
+{
+	memset(images,0,sizeof(images));
+	for(i=1050;i<5100;i++)
+		finimg[i]=LOGO[i];
+	for(i=5100;i<65536;i++)
+		finimg[i]=gImage_wolf[i];
+
+		memcpy((void *)images[0],(void *)&finimg[0],IM_HEIGHT*IM_WIDTH);
+		sobeledge();
+		threshold();
+		sharpening_filter();
+		smoothing_filter();
+}
+
+
+
+4) DECIMATION & INTERPOLATION
+
+#include<stdio.h>
+#include<math.h>
+#define FREQ 500
+int tb=2; //sampling rate multiplier for interpolated signal
+float tx[128]; //to store sine(input) wave Signal
+float ty[256]; // to store Interpolated signal
+float x[256],y[256]; //to store decemated Signal
+void main()
+{
+int txx,ti,tc,td;
+int a,b,d;
+int i,j,z,g;
+int tj,tcc,tz;
+int ta=128;
+for(i=0;i<127;i++)
+{
+tx[i]=sin(2*3.14*FREQ*i/24000); //generating sine wave
+printf("%f\n",tx[i]);
+}
+//Interpolation
+tc = tb - 1;
+txx = 0;
+for (ti=1;ti<=ta;ti++)
+{
+ty[ti+txx] = tx[ti];
+tcc = ti+txx;
+tz = ti;
+for (tj = 1 ; tj<=tc ;tj++)
+{
+ty[tcc+1] = 0; //adding zeros in between samples
+ti = ti+1;
+tcc = tcc+1;
+}
+txx = tcc-tz;
+ti = ti-tc;
+}
+td = ta*tb; //Length of interpolated signal
+for(ti=1;ti<=td;ti++)
+{
+printf("\n The Value of output ty[%d]=%f",ti,ty[ti]);
+}
+//Decimation
+b=2; //Sampling rate divider for decimated signal
+j=1;
+for (g=1;g<=128;g++)
+{
+y[g] = ty[j];
+j = j+b;
+printf("%f\n",y[g]);
+}
+}
+
+
+
+5) FSK
+
+34
+#include<stdio.h>
+#include<math.h>
+#define TIME 336 //length of FSK signal
+#define PI 3.14
+float fh[TIME],fl[TIME],FSK[TIME];
+int input_string[8],scale_data[TIME];
+void main()
+{
+int i,j,k,l;
+printf("\nEnter your digital data string in the form of 1 & 0s\n");
+for(i=0;i<8;i++) //data in binary format
+scanf("%d",&input_string[i]);
+k=0;
+for(k=0;k<TIME;k++)
+{
+for(j=0;j<8;j++)
+{
+for(i=0;i<21;i++)
+{
+scale_data[k]=input_string[j]; // Scaling input data
+k++;
+}
+}
+}
+for(i=0;i<TIME;i++)
+{
+fh[i]=sin(2*PI*2000*i/10000);//high frequency
+fl[i]=sin(2*PI*1000*i/10000);//low frequency
+}
+//assigning high frequency to bit 1
+k=0;
+for(l=0;k<TIME;l++)
+{
+for(i=0;i<8;i++)
+{
+if(input_string[i]==1)
+{
+for(j=0;j<21;j++)
+{
+FSK[k]=fh[j];
+k++;
+}
+}
+else
+//assigning low frequency to bit 0
+{
+if(input_string[i]==0)
+{
+for(j=0;j<21;j++)
+{
+FSK[k]=fl[j];
+k++;
+}}}}}}
+
+
+
+6) AM WAVE
+
+#include "L138_LCDK_aic3106_init.h"
+short amp = 20; //index for modulation
+int main(void)
+{
+int16_t baseband[20]={1000,951,809,587,309,0,-309,
+-587,-809,-951,-1000,-951,-809,
+-587,-309,0,309,587,809,951}; // base band signal
+int16_t carrier[20] ={1000,0,-1000,0,1000,0,-1000,
+0,1000,0,-1000,0,1000,0,-1000,
+0,1000,0,-1000,0}; // 2 kHz
+int16_t output[20];
+int16_t k;
+L138_initialise_poll(FS_8000_HZ,ADC_GAIN_0DB,DAC_ATTEN_0DB,LCDK_LINE_INPUT);
+while(1)
+{
+for (k=0; k<20; k++)
+{
+output[k]= carrier[k] + ((amp*baseband[k]*carrier[k]/10)>>12);
+output_left_sample(20*output[k]);
+}
+}
+}
+
+
+7)A) RAMP
+
+#include "L138_LCDK_aic3106_init.h"
+#define LOOPLENGTH 64
+int16_t output = 0;
+interrupt void interrupt4(void) // interrupt service routine
+{
+output_left_sample(output); // output to L DAC
+output += 2000; // increment output value
+if (output >= 30000) // if peak is reached
+output = -30000; // reinitialize
+return;
+}
+int main(void)
+{
+L138_initialise_intr(FS_8000_HZ,ADC_GAIN_0DB,DAC_ATTEN_0DB,LCDK_LINE_INPUT);
+while(1);
+}
+
+B) SQUARE
+
+#include "L138_LCDK_aic3106_init.h"
+#define LOOPLENGTH 64
+int16_t square_table[LOOPLENGTH] =
+{10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000,
+10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000,
+10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000,
+10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000,
+-10000,-10000,-10000,-10000,-10000,-10000,-10000,-10000,
+-10000,-10000,-10000,-10000,-10000,-10000,-10000,-10000,
+-10000,-10000,-10000,-10000,-10000,-10000,-10000,-10000,
+-10000,-10000,-10000,-10000,-10000,-10000,-10000,-10000};
+int16_t loopindex = 0;
+interrupt void interrupt4(void) // interrupt service routine
+{
+output_left_sample(square_table[loopindex++]);
+if (loopindex >= LOOPLENGTH)
+loopindex = 0;
+return;
+}
+int main(void)
+{
+L138_initialise_intr(FS_8000_HZ,ADC_GAIN_0DB,DAC_ATTEN_0DB,LCDK_LINE_INPUT);
+while(1);
+}
+
+C) SINE
+
+#include "L138_LCDK_aic3106_init.h"
+#include "math.h"
+#define SAMPLING_FREQ 8000
+#define PI 3.14159265358979
+float frequency = 1000.0;
+float amplitude = 20000.0;
+float theta_increment;
+float theta = 0.0;
+interrupt void interrupt4(void) // interrupt service routine
+{
+theta_increment = 2*PI*frequency/SAMPLING_FREQ;
+theta += theta_increment;
+if (theta > 2*PI) theta -= 2*PI;
+output_left_sample((int16_t)(amplitude*sin(theta)));
+return;
+}
+int main(void)
+{
+L138_initialise_intr(FS_8000_HZ,ADC_GAIN_0DB,DAC_ATTEN_0DB,LCDK_LINE_INPUT);
+while(1);
+}
+
+8)a) FIR
+
+#include "L138_LCDK_aic3106_init.h"
+#define N 5
+float h[N] = {
+2.0000E-001,2.0000E-001,2.0000E-001,2.0000E-001,2.0000E-001
+};
+float x[N]; // filter delay line
+interrupt void interrupt4(void)
+{
+short i;
+float yn = 0.0;
+x[0] = (float)(input_left_sample()); // input from ADC
+for (i=0 ; i<N ; i++) // compute filter output
+yn += h[i]*x[i];
+for (i=(N-1) ; i>0 ; i--) // shift delay line
+x[i] = x[i-1];
+output_left_sample((uint16_t)(yn)); // output to DAC
+return;
+}
+int main(void)
+{ L138_initialise_intr(FS_8000_HZ,ADC_GAIN_0DB,DAC_ATTEN_0DB,LCDK_LINE_INPUT);
+while(1);
+}
+
+
+b) IIR
+
+#include "L138_LCDK_aic3106_init.h"
+#include "bs1800int.cof"
+int w[NUM_SECTIONS][2] = {0};
+interrupt void interrupt4() //interrupt service routine
+{
+int section; // index for section number
+int input; // input to each section
+int wn,yn; // intermediate and output values in each stage
+input = input_left_sample();
+// input = (int)prbs();
+for (section=0 ; section< NUM_SECTIONS ; section++)
+{
+//
+wn = input - ((a[section][1]*w[section][0])>>15) - ((a[section][2]*w[section][1])>>15);
+//
+yn = ((b[section][0]*wn)>>15) + ((b[section][1]*w[section][0])>>15) + ((b[section][2]*w[section][1])>>15);
+w[section][1] = w[section][0];
+w[section][0] = wn;
+input = yn; // output of current section will be input to next
+}
+output_left_sample((int16_t)(yn)); // before writing to codec
+return; //return from ISR
+}
+int main(void)
+{
+L138_initialise_intr(FS_8000_HZ,ADC_GAIN_0DB,DAC_ATTEN_0DB,LCDK_LINE_INPUT);
+while(1);
+}
+
+
+9)a) AUDIO ECHO:
+
+#include "L138_LCDK_aic3106_init.h"
+#define GAIN 0.6
+#define BUF_SIZE 16000
+int16_t input,output,delayed;
+int16_t buffer[BUF_SIZE];
+int i = 0;
+interrupt void interrupt4(void) // interrupt service routine
+{
+input = input_left_sample();
+delayed = buffer[i];
+output = delayed + input;
+buffer[i] = input + delayed*GAIN;
+i = (i+1)%BUF_SIZE;
+output_left_sample(output);
+return;
+}
+int main(void)
+{
+int i;
+for (i=0 ; i<BUF_SIZE ; i++)
+{
+buffer[i] = 0;
+}
+L138_initialise_intr(FS_8000_HZ,ADC_GAIN_30DB,DAC_ATTEN_0DB,LCDK_MIC_INPUT);
+while(1);
+}
+
+
+b) DELAY
+
+#include "L138_LCDK_aic3106_init.h"
+#define BUF_SIZE 24000
+uint16_t input,output,delayed;
+uint16_t buffer[BUF_SIZE];
+int i = 0;
+interrupt void interrupt4(void) // interrupt service routine
+{
+input = input_left_sample();
+delayed = buffer[i];
+output = delayed + input;
+buffer[i] = input;
+i = (i+1)%BUF_SIZE;
+output_left_sample(output);
+return;
+}
+int main(void)
+{
+int i;
+for (i=0 ; i<BUF_SIZE ; i++)
+{
+buffer[i] = 0;
+}
+L138_initialise_intr(FS_48000_HZ,ADC_GAIN_9DB,DAC_ATTEN_0DB,LCDK_MIC_INPUT);
+while(1);
+}
+
+
+
